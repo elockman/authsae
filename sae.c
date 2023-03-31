@@ -76,20 +76,6 @@
 #define CN_Update(ctx, x, l) HMAC_Update((ctx), (x), (l))
 #define CN_Final(ctx, x) HMAC_Final((ctx), (x), &function_mdlen)
 
-/* Pre 1.1.0 compatibility macros */
-#ifndef OPENSSL_API_COMPAT
-static HMAC_CTX *HMAC_CTX_new(void) {
-  return (HMAC_CTX *)calloc(sizeof(HMAC_CTX), 1);
-}
-
-static void HMAC_CTX_free(HMAC_CTX *ctx) {
-  if (ctx) {
-    HMAC_CTX_cleanup(ctx);
-    free(ctx);
-  }
-}
-#endif
-
 struct sae_cb *cb;
 
 /*
