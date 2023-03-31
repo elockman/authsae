@@ -27,12 +27,13 @@
 #include "peers.h"
 #include "peer_lists.h"
 
+
 void dump_peer_list()
 {
   struct candidate *peer;
 
   sae_debug(AMPE_DEBUG_PEERS, "--- start peer list ---\n");
-  TAILQ_FOREACH(peer, &peers, entry) {
+  TAILQ_FOREACH(peer, peers_ptr, entry) {
     sae_debug(AMPE_DEBUG_PEERS, MACSTR " [sae=%d, ampe=%d]\n",
       MAC2STR(peer->peer_mac), peer->state, peer->link_state);
   }

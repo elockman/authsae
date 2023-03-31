@@ -199,13 +199,13 @@ static void remove_from_blacklist(void *data) {
   struct candidate *peer, *delme;
 
   delme = (struct candidate *)data;
-  TAILQ_FOREACH(peer, &blacklist, entry) {
+  TAILQ_FOREACH(peer, blacklist_ptr, entry) {
     if (memcmp(delme->peer_mac, peer->peer_mac, ETH_ALEN) == 0) {
       sae_debug(
           SAE_DEBUG_PROTOCOL_MSG,
           "removing " MACSTR " from blacklist\n",
           MAC2STR(peer->peer_mac));
-      TAILQ_REMOVE(&blacklist, peer, entry);
+      TAILQ_REMOVE(blacklist_ptr, peer, entry);
       free(delme);
       return;
     }
@@ -216,7 +216,7 @@ static void blacklist_peer(struct candidate *peer) {
   struct candidate *fubar;
   if ((fubar = (struct candidate *)malloc(sizeof(struct candidate))) != NULL) {
     memcpy(fubar->peer_mac, peer->peer_mac, ETH_ALEN);
-    TAILQ_INSERT_TAIL(&blacklist, fubar, entry);
+    TAILQ_INSERT_TAIL(blacklist_ptr, fubar, entry);
     (void)cb->evl->add_timeout(
         SRV_SEC(blacklist_timeout), remove_from_blacklist, fubar);
   }
@@ -226,7 +226,7 @@ static void delete_local_peer_info(struct candidate *delme)
 {
   struct candidate *peer;
 
-  TAILQ_FOREACH(peer, &peers, entry) {
+  TAILQ_FOREACH(peer, peers_ptr, entry) {
     if (delme == peer) {
       sae_debug(
           SAE_DEBUG_PROTOCOL_MSG,
@@ -253,7 +253,7 @@ static void delete_local_peer_info(struct candidate *delme)
       peer->t2 = 0;
       cb->evl->rem_timeout(peer->rekey_ping_timer);
       peer->rekey_ping_timer = 0;
-      TAILQ_REMOVE(&peers, peer, entry);
+      TAILQ_REMOVE(peers_ptr, peer, entry);
       dump_peer_list();
 
       /*
@@ -319,7 +319,7 @@ void finalize(unsigned short reason, struct candidate *peer,
 static int on_blacklist(unsigned char *mac) {
   struct candidate *peer;
 
-  TAILQ_FOREACH(peer, &blacklist, entry) {
+  TAILQ_FOREACH(peer, blacklist_ptr, entry) {
     if (memcmp(peer->peer_mac, mac, ETH_ALEN) == 0) {
       return 1;
     }
@@ -330,7 +330,7 @@ static int on_blacklist(unsigned char *mac) {
 struct candidate *find_peer(unsigned char *mac, int accept) {
   struct candidate *peer, *found = NULL;
 
-  TAILQ_FOREACH(peer, &peers, entry) {
+  TAILQ_FOREACH(peer, peers_ptr, entry) {
     if (memcmp(peer->peer_mac, mac, ETH_ALEN) == 0) {
       /*
        * if "accept" then we're only looking for peers in "accepted" state
@@ -1536,7 +1536,7 @@ struct candidate *create_candidate(
       peer->rc = 0;
   peer->private_val = NULL;
   peer->pwe = peer->peer_element = peer->my_element = NULL;
-  TAILQ_INSERT_TAIL(&peers, peer, entry);
+  TAILQ_INSERT_TAIL(peers_ptr, peer, entry);
   peer->state = SAE_NOTHING;
   peer->cookie = cookie;
   peer->association_id = aid_alloc();
@@ -1557,7 +1557,7 @@ static int validate_peers(unsigned char *mac) {
   struct candidate *candidates[MaxPeers];
   int i, count = 0;
 
-  TAILQ_FOREACH(peer, &peers, entry) {
+  TAILQ_FOREACH(peer, peers_ptr, entry) {
     if (memcmp(peer->peer_mac, mac, ETH_ALEN) == 0)
       if (count < MaxPeers) // pointless to report problems with candidates
                             // after MaxPeers
@@ -2599,7 +2599,7 @@ void sae_dump_db(int unused) {
   struct candidate *peer;
 
   fprintf(stderr, "SAE:\n");
-  TAILQ_FOREACH(peer, &peers, entry) {
+  TAILQ_FOREACH(peer, peers_ptr, entry) {
     fprintf(
         stderr,
         "\t" MACSTR " in state %s\n",
@@ -2641,8 +2641,7 @@ int sae_initialize(
    * initialize globals
    */
   memset(allzero, 0, SHA256_DIGEST_LENGTH);
-  TAILQ_INIT(&peers);
-  TAILQ_INIT(&blacklist);
+  init_lists();
   i = RAND_bytes((unsigned char *)&token_generator, sizeof(unsigned long));
   if (i == 0) {
     fprintf(stderr, "failed to generate random token!\n");

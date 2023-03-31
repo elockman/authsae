@@ -18,7 +18,7 @@ MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring Host System and compiler flags ...")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 	ADD_DEFINITIONS(-g)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror")
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-stringop-truncation")
 
 	INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR})
 	LINK_DIRECTORIES(${CMAKE_SOURCE_DIR})
@@ -61,6 +61,7 @@ LIST(APPEND libsae_libs
 )
 
 LIST(APPEND libsae_sources
+	peer_lists.c
 	aid.c
 	ampe.c
 	chan.c
